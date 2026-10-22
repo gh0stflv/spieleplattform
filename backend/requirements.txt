@@ -1,0 +1,3 @@
+# Python-Abhängigkeiten, z. B.:
+# flask
+# bcrypt
