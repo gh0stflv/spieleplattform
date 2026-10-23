@@ -57,6 +57,12 @@ SPIELE = [
      "Karte anklicken oder antippen · Leertaste = Pause", 1000, 250, 4),
     ("viergewinnt", "Vier gewinnt", "Bring vier Steine in eine Reihe: gegen den Computer, zu zweit oder im LAN.",
      "Spalte anklicken oder ← → und Enter · Tasten 1–7", 400, 200, 3),
+    ("supertictactoe", "Super Tic-Tac-Toe", "Tic-Tac-Toe aus 9 Feldern: Dein Zug bestimmt, wo der Gegner spielen muss.",
+     "Feld anklicken · im leuchtenden Bereich spielen", 400, 100, 5),
+    ("ssp", "Schere Stein Papier", "Wer zuerst 3 Runden gewinnt. Der Computer lernt deine Gewohnheiten!",
+     "Klicken oder Tasten 1 = Schere, 2 = Stein, 3 = Papier", 200, 60, 4),
+    ("dame", "Dame", "Klassisches Dame: diagonal ziehen, Schlagzwang, Mehrfachsprung, Damen ganz hinten.",
+     "Stein anklicken, dann Zielfeld", 450, 100, 10),
 ]
 
 ERFOLGE = [

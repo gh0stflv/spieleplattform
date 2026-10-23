@@ -21,6 +21,7 @@ export class Launcher {
       canvas: wurzel.querySelector("#spielfeld"),
       overlay: wurzel.querySelector("#overlay"),
       zurueck: wurzel.querySelector("#zurueck"),
+      tipp: wurzel.querySelector(".tipp"),
     };
     this.loop = new GameLoop();
     this.eingabe = new Eingabe(this.el.canvas);
@@ -72,6 +73,7 @@ export class Launcher {
     this.el.buehne.hidden = false;
     this.el.titel.textContent = info.name;
     const Klasse = SPIELE[id];
+    this.el.tipp.hidden = Boolean(Klasse.ohnePause);
     this.aktuell = new Klasse(this.el.canvas, {
       beiPunkten: (wert, bezeichnung = "Punkte") => { this.el.anzeige.textContent = `${bezeichnung}: ${wert}`; },
       beiZustand: (z) => this.#zustandGeaendert(z),
