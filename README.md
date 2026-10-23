@@ -35,7 +35,8 @@ Tests: `cd backend && python -m pytest`
 - Gast-Modus: spielen ohne Konto, Ergebnisse werden dann nicht gespeichert
 - Launcher mit Spielkacheln, Steuerung wird vor dem Start angezeigt
 - **Snake** (Tastatur oder Wischen) und **Memory** (Maus oder Touch)
-- **Vier gewinnt**: gegen den Computer (3 Stufen), zu zweit an einem Gerät oder im LAN
+- **Vier gewinnt**, **Super Tic-Tac-Toe** und **Dame**: gegen den Computer (3 Stufen), zu zweit an einem Gerät oder im LAN
+- **Schere Stein Papier**: gegen einen lernenden Computer oder im LAN
 - Mehrspieler im lokalen Netzwerk über Räume mit Code
 - Bestenliste (Top 10 pro Spiel, eigener Eintrag hervorgehoben)
 - Erfolge und Profilseite mit Statistik
@@ -55,8 +56,9 @@ backend/
 frontend/
   launcher.html, login.html, profil.html
   css/stil.css
-  js/core/            Spiel + Spielobjekt (abstrakt), GameLoop, Eingabe, ApiClient, Raum (LAN)
-  js/games/           snake/, memory/, viergewinnt/, index.js (Registry)
+  js/core/            Spiel + Spielobjekt (abstrakt), RundenSpiel (Basis für 2-Personen-Spiele),
+                      GameLoop, Eingabe, ApiClient, Raum (LAN)
+  js/games/           snake/, memory/, viergewinnt/, supertictactoe/, dame/, ssp/, index.js (Registry)
   js/Launcher.js      Spielauswahl, Overlay, Bestenliste nach dem Spiel
 docs/                 Konzept und Planung
 ```
@@ -85,6 +87,8 @@ docs/                 Konzept und Planung
 2. In `frontend/js/games/index.js` eintragen.
 3. In `backend/database.py` unter `SPIELE` eine Zeile ergänzen, mit Grenzwerten für die Plausibilitätsprüfung.
 4. Optional eine Kachel-Grafik `.kachel-<id>` in `css/stil.css`.
+
+**Brettspiele für 2 Personen:** Von `RundenSpiel` erben. Dann gibt es Computer (3 Stufen), 2 Spieler an einem Gerät und LAN automatisch. Zu implementieren sind nur `zugErlaubt`, `zugAnwenden`, `ergebnis`, `botZug` und `zeichnen`. Ein Mausklick ruft `this.ziehe(zug)` auf. Vorlage: `games/supertictactoe/`.
 
 **Modi und LAN:** Mit `static modi = [{ id, name }, …]` bekommt das Spiel mehrere Startknöpfe (z. B. Schwierigkeit). Ein Modus mit `lan: true` öffnet die Raum-Auswahl. Im LAN-Spiel ist `this.raum` gesetzt (`raum.ich` = eigene Spielernummer, `raum.seed` für gemeinsamen Zufall). Eigene Züge mit `this.raum.senden({ typ: "zug", … })` schicken und erst in `empfangeEreignis({ von, daten })` anwenden: Dort kommen alle Züge, auch die eigenen, in derselben Reihenfolge an. Mit `get gewertet()` steuert das Spiel, ob das Ergebnis in die Bestenliste kommt.
 

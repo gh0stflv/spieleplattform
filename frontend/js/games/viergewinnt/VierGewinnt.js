@@ -1,4 +1,4 @@
-import { Spiel, Zustand } from "../../core/Spiel.js";
+import { RundenSpiel } from "../../core/RundenSpiel.js";
 
 const SPALTEN = 7;
 const ZEILEN = 6;
@@ -9,13 +9,12 @@ const ROT = 1; // Spieler 1 (beginnt)
 const GELB = 2; // Spieler 2 bzw. Computer
 const FARBEN = { [ROT]: "#ff5b6e", [GELB]: "#ffd84d" };
 const FALL_TEMPO = 2400; // px pro Sekunde²
-const BOT_DENKPAUSE = 0.45;
 
-// Schwierigkeit → Suchtiefe, Fehlerquote und Grundpunkte für einen Sieg
+// Schwierigkeit → Suchtiefe und Fehlerquote des Computers
 const STUFEN = {
-  leicht: { tiefe: 2, zufall: 0.35, punkte: 100 },
-  mittel: { tiefe: 4, zufall: 0.1, punkte: 200 },
-  schwer: { tiefe: 7, zufall: 0, punkte: 300 },
+  leicht: { tiefe: 2, zufall: 0.35 },
+  mittel: { tiefe: 4, zufall: 0.1 },
+  schwer: { tiefe: 7, zufall: 0 },
 };
 
 /** Reines Spielbrett ohne Darstellung: wird auch von der KI für die Suche benutzt. */
@@ -113,161 +112,82 @@ function besterZug(brett, spieler, tiefe) {
   return zug;
 }
 
-export class VierGewinnt extends Spiel {
-  static modi = [
-    { id: "mittel", name: "Gegen Computer: Mittel" },
-    { id: "leicht", name: "Gegen Computer: Leicht" },
-    { id: "schwer", name: "Gegen Computer: Schwer" },
-    { id: "zwei", name: "2 Spieler an einem Gerät" },
-    { id: "lan", name: "Im Netzwerk (LAN) spielen", lan: true },
-  ];
+export class VierGewinnt extends RundenSpiel {
+  static seiten = ["Rot", "Gelb"];
+  static symbole = ["🔴", "🟡"];
 
   constructor(canvas, rueckrufe) {
     super("Vier gewinnt", canvas, rueckrufe);
     this.zuruecksetzen();
   }
 
-  get gegenComputer() { return STUFEN[this.modus] !== undefined; }
-  get imNetz() { return this.modus === "lan" && this.raum; }
-  /** Im LAN spielt Raum-Spieler 0 Rot, Spieler 1 Gelb. */
-  get meineFarbe() { return this.raum?.ich === 1 ? GELB : ROT; }
-  get gewertet() { return this.gegenComputer; }
-
-  get ergebnisText() {
-    if (!this.sieger) return "Unentschieden!";
-    if (this.modus === "lan") return this.sieger === this.meineFarbe ? "Du hast gewonnen!" : `${this.#name(this.sieger)} gewinnt!`;
-    if (!this.gegenComputer) return `${this.sieger === ROT ? "Rot" : "Gelb"} gewinnt!`;
-    return this.sieger === ROT ? "Du hast gewonnen!" : "Der Computer gewinnt.";
-  }
-
   zuruecksetzen() {
     this.brett = new Brett();
-    this.amZug = ROT;
     this.auswahl = 3;
     this.fallend = null; // { spalte, zeile, y, v, spieler }
-    this.sieger = null;
+    this.letzteSpalte = null;
     this.gewinnReihe = null;
-    this.botWartet = 0;
-    this.endeWartet = 0;
-    this.wartetAufNetz = false;
   }
 
-  #name(farbe) {
-    if (this.modus === "lan") return this.raum?.spieler[farbe === ROT ? 0 : 1] ?? (farbe === ROT ? "Rot" : "Gelb");
-    if (this.gegenComputer) return farbe === ROT ? "Du" : "Computer";
-    return farbe === ROT ? "Rot" : "Gelb";
+  // Seite 0 = Rot = Steinwert ROT (1), Seite 1 = Gelb = GELB (2)
+  zugErlaubt(spalte) {
+    return Number.isInteger(spalte) && spalte >= 0 && spalte < SPALTEN && this.brett.passt(spalte);
   }
 
-  #zeigeAmZug() {
-    this.rueckrufe.beiPunkten?.(this.#name(this.amZug), this.amZug === ROT ? "🔴 Am Zug" : "🟡 Am Zug");
-  }
-
-  starten(modus) {
-    super.starten(modus);
-    this.#zeigeAmZug();
-  }
-
-  #menschAmZug() {
-    if (this.zustand !== Zustand.LAEUFT || this.fallend || this.gewinnReihe) return false;
-    if (this.modus === "lan") return this.imNetz && this.amZug === this.meineFarbe && !this.wartetAufNetz;
-    return !(this.gegenComputer && this.amZug === GELB);
-  }
-
-  /** Eigener Zug: offline sofort, im LAN erst wenn er vom Server zurückkommt. */
-  #zieheSelbst(spalte) {
-    if (!this.brett.passt(spalte)) return;
-    if (this.modus !== "lan") { this.#werfe(spalte); return; }
-    this.wartetAufNetz = true;
-    this.raum.senden({ typ: "zug", spalte }).catch(() => { this.wartetAufNetz = false; });
-  }
-
-  empfangeEreignis({ von, daten }) {
-    if (daten?.typ !== "zug" || this.zustand !== Zustand.LAEUFT) return;
-    const farbe = von === 0 ? ROT : GELB;
-    if (farbe !== this.amZug || this.fallend || !Number.isInteger(daten.spalte)) return;
-    if (daten.spalte < 0 || daten.spalte >= SPALTEN) return;
-    if (farbe === this.meineFarbe) this.wartetAufNetz = false;
-    this.auswahl = daten.spalte;
-    this.#werfe(daten.spalte);
-  }
-
-  #werfe(spalte) {
-    if (!this.brett.passt(spalte)) return;
-    const zeile = this.brett.setze(spalte, this.amZug);
-    this.fallend = { spalte, zeile, y: OBEN / 2, v: 0, spieler: this.amZug };
-  }
-
-  #landen() {
-    const { spalte, spieler } = this.fallend;
-    this.fallend = null;
-    const reihe = this.brett.gewinnReihe(spalte);
-    if (reihe || this.brett.voll()) {
-      this.sieger = reihe ? spieler : null;
-      this.gewinnReihe = reihe ?? [];
-      this.endeWartet = 1.2; // Gewinnreihe kurz zeigen
-      this.#punkteBerechnen();
-      return;
-    }
-    this.amZug = spieler === ROT ? GELB : ROT;
-    if (this.gegenComputer && this.amZug === GELB) this.botWartet = BOT_DENKPAUSE;
-    this.#zeigeAmZug();
-  }
-
-  #punkteBerechnen() {
-    if (!this.gegenComputer) return;
-    const stufe = STUFEN[this.modus];
-    const eigeneZuege = Math.ceil(this.brett.zuege / 2);
-    if (this.sieger === ROT) this.punkte = stufe.punkte + Math.max(0, 22 - eigeneZuege) * 5;
-    else if (!this.sieger) this.punkte = stufe.punkte / 4;
-    else this.punkte = 0;
-  }
-
-  #botZug() {
-    const stufe = STUFEN[this.modus];
-    const frei = this.brett.freieSpalten();
-    const spalte = Math.random() < stufe.zufall
-      ? frei[Math.floor(Math.random() * frei.length)]
-      : besterZug(this.brett, GELB, stufe.tiefe);
+  zugAnwenden(spalte, seite) {
+    const spieler = seite === 0 ? ROT : GELB;
+    const zeile = this.brett.setze(spalte, spieler);
     this.auswahl = spalte;
-    this.#werfe(spalte);
+    this.letzteSpalte = spalte;
+    this.fallend = { spalte, zeile, y: OBEN / 2, v: 0, spieler };
   }
+
+  ergebnis() {
+    const reihe = this.brett.gewinnReihe(this.letzteSpalte);
+    if (reihe) {
+      this.gewinnReihe = reihe;
+      return this.brett.feld(this.letzteSpalte, this.brett.felder[this.letzteSpalte].length - 1) === ROT ? 0 : 1;
+    }
+    return this.brett.voll() ? null : undefined;
+  }
+
+  botZug(stufe) {
+    const { tiefe, zufall } = STUFEN[stufe];
+    const frei = this.brett.freieSpalten();
+    return Math.random() < zufall ? frei[Math.floor(Math.random() * frei.length)] : besterZug(this.brett, GELB, tiefe);
+  }
+
+  siegBonus() {
+    return Math.max(0, 22 - Math.ceil(this.zuegeGesamt / 2)) * 5;
+  }
+
+  animieren(dt) {
+    const f = this.fallend;
+    if (!f) return;
+    const ziel = OBEN + (ZEILEN - 1 - f.zeile) * ZELLE + ZELLE / 2;
+    f.v += FALL_TEMPO * dt;
+    f.y += f.v * dt;
+    if (f.y >= ziel) this.fallend = null;
+  }
+
+  beschaeftigt() { return this.fallend !== null; }
 
   verarbeiteEingabe(taste) {
-    if (!this.#menschAmZug()) return;
+    if (!this.menschAmZug) return;
     if (taste === "ArrowLeft" || taste === "a") this.auswahl = Math.max(0, this.auswahl - 1);
     else if (taste === "ArrowRight" || taste === "d") this.auswahl = Math.min(SPALTEN - 1, this.auswahl + 1);
-    else if (taste === "Enter" || taste === "ArrowDown" || taste === "s") this.#zieheSelbst(this.auswahl);
-    else if (/^[1-7]$/.test(taste)) { this.auswahl = Number(taste) - 1; this.#zieheSelbst(this.auswahl); }
+    else if (taste === "Enter" || taste === "ArrowDown" || taste === "s") this.ziehe(this.auswahl);
+    else if (/^[1-7]$/.test(taste)) { this.auswahl = Number(taste) - 1; this.ziehe(this.auswahl); }
   }
 
   verarbeiteKlick(x) {
-    if (!this.#menschAmZug()) return;
+    if (!this.menschAmZug) return;
     this.auswahl = Math.min(SPALTEN - 1, Math.max(0, Math.floor(x / ZELLE)));
-    this.#zieheSelbst(this.auswahl);
+    this.ziehe(this.auswahl);
   }
 
   verarbeiteZeiger(x) {
-    if (this.#menschAmZug()) this.auswahl = Math.min(SPALTEN - 1, Math.max(0, Math.floor(x / ZELLE)));
-  }
-
-  update(dt) {
-    if (this.endeWartet > 0) {
-      this.endeWartet -= dt;
-      if (this.endeWartet <= 0) this.beenden();
-      return;
-    }
-    if (this.fallend) {
-      const f = this.fallend;
-      const ziel = OBEN + (ZEILEN - 1 - f.zeile) * ZELLE + ZELLE / 2;
-      f.v += FALL_TEMPO * dt;
-      f.y += f.v * dt;
-      if (f.y >= ziel) this.#landen();
-      return;
-    }
-    if (this.botWartet > 0) {
-      this.botWartet -= dt;
-      if (this.botWartet <= 0) this.#botZug();
-    }
+    if (this.menschAmZug) this.auswahl = Math.min(SPALTEN - 1, Math.max(0, Math.floor(x / ZELLE)));
   }
 
   #stein(ctx, x, y, spieler, hervorheben = false) {
@@ -296,9 +216,9 @@ export class VierGewinnt extends Spiel {
     ctx.fillRect(0, 0, this.breite, this.hoehe);
 
     // Vorschau-Stein über der gewählten Spalte
-    if (this.#menschAmZug()) {
+    if (this.menschAmZug) {
       ctx.globalAlpha = 0.85;
-      this.#stein(ctx, this.auswahl * ZELLE + ZELLE / 2, OBEN / 2, this.amZug);
+      this.#stein(ctx, this.auswahl * ZELLE + ZELLE / 2, OBEN / 2, this.amZug === 0 ? ROT : GELB);
       ctx.globalAlpha = 1;
     }
     if (this.fallend) {
