@@ -63,6 +63,8 @@ SPIELE = [
      "Klicken oder Tasten 1 = Schere, 2 = Stein, 3 = Papier", 200, 60, 4),
     ("dame", "Dame", "Klassisches Dame: diagonal ziehen, Schlagzwang, Mehrfachsprung, Damen ganz hinten.",
      "Stein anklicken, dann Zielfeld", 450, 100, 10),
+    ("schiffe", "Schiffe versenken", "Finde und versenke die gegnerische Flotte. Bei einem Treffer darfst du nochmal.",
+     "Feld anklicken · beim Aufstellen R = neu verteilen, Enter = bereit", 500, 60, 15),
 ]
 
 ERFOLGE = [

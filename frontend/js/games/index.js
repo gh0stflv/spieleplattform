@@ -1,6 +1,7 @@
 /** Registry: Spiel-ID (wie in der Datenbank) → Klasse. Neues Spiel = Klasse schreiben + hier eintragen. */
 import { Dame } from "./dame/Dame.js";
 import { Memory } from "./memory/Memory.js";
+import { SchiffeVersenken } from "./schiffe/SchiffeVersenken.js";
 import { Snake } from "./snake/Snake.js";
 import { SchereSteinPapier } from "./ssp/SchereSteinPapier.js";
 import { SuperTicTacToe } from "./supertictactoe/SuperTicTacToe.js";
@@ -13,4 +14,5 @@ export const SPIELE = {
   supertictactoe: SuperTicTacToe,
   ssp: SchereSteinPapier,
   dame: Dame,
+  schiffe: SchiffeVersenken,
 };

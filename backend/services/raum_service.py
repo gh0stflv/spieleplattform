@@ -90,7 +90,14 @@ class RaumService:
 
     def _eintreten(self, raum, name):
         token = secrets.token_urlsafe(16)
-        raum.spieler.append({"name": (name or "Gast")[:20], "token": token})
+        name = (name or "Gast")[:20]
+        vorhanden = {s["name"] for s in raum.spieler}
+        if name in vorhanden:  # zwei Gäste sollen unterscheidbar sein
+            nummer = 2
+            while f"{name} {nummer}" in vorhanden:
+                nummer += 1
+            name = f"{name} {nummer}"
+        raum.spieler.append({"name": name, "token": token})
         return {"code": raum.code, "token": token, "ich": len(raum.spieler) - 1, **raum.zustand()}
 
     def abfragen(self, code, seit=0):

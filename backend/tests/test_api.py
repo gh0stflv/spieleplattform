@@ -24,7 +24,7 @@ def test_passwort_gehasht(app, client):
 
 def test_spiele(client):
     ids = [s["id"] for s in client.get("/api/spiele").json]
-    assert ids == ["snake", "memory", "viergewinnt", "supertictactoe", "ssp", "dame"]
+    assert ids == ["snake", "memory", "viergewinnt", "supertictactoe", "ssp", "dame", "schiffe"]
 
 
 def test_score_nur_eingeloggt(client):
@@ -64,11 +64,11 @@ def test_erfolge_allrounder(eingeloggt):
     eingeloggt.post("/api/scores", json={"spiel_id": "snake", "punkte": 10, "dauer_s": 10})
     r = eingeloggt.post("/api/scores", json={"spiel_id": "memory", "punkte": 900, "dauer_s": 30})
     assert {e["id"] for e in r.json["neue_erfolge"]} == {"gedaechtniskuenstler"}
-    for spiel in ("viergewinnt", "supertictactoe", "ssp", "dame"):
+    for spiel in ("viergewinnt", "supertictactoe", "ssp", "dame", "schiffe"):
         r = eingeloggt.post("/api/scores", json={"spiel_id": spiel, "punkte": 0, "dauer_s": 30})
     assert {e["id"] for e in r.json["neue_erfolge"]} == {"allrounder"}
     profil = eingeloggt.get("/api/profil").json
-    assert profil["statistik"]["spiele_gesamt"] == 6
+    assert profil["statistik"]["spiele_gesamt"] == 7
     assert sum(e["erreicht"] for e in profil["erfolge"]) == 3
 
 
@@ -104,6 +104,12 @@ def test_raum_ablauf(client, app):
     stand = zweiter.get(f"/api/raeume/{code}?seit=0").json
     assert stand["ereignisse"] == [{"nr": 0, "von": 0, "daten": {"spalte": 3}}]
     assert zweiter.get(f"/api/raeume/{code}?seit=1").json["ereignisse"] == []
+
+
+def test_raum_gleiche_namen(client, app):
+    code = client.post("/api/raeume", json={"spiel_id": "dame"}).json["code"]
+    b = app.test_client().post(f"/api/raeume/{code}/beitreten", json={})
+    assert b.json["spieler"] == ["Gast", "Gast 2"]
 
 
 def test_raum_unbekannt(client):
