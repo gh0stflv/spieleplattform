@@ -1,1 +1,41 @@
-<!-- login.html – Seite wird vom Team gestaltet (siehe docs/Projektkonzept.md) -->
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Einloggen · Spieleplattform</title>
+  <link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+  <header class="kopf">
+    <a class="logo" href="launcher.html">🕹️ Spieleplattform</a>
+  </header>
+  <main class="schmal">
+    <div class="karte">
+      <div class="reiter" role="tablist">
+        <button type="button" role="tab" data-modus="login">Einloggen</button>
+        <button type="button" role="tab" data-modus="registrieren">Registrieren</button>
+      </div>
+      <form id="formular" novalidate>
+        <label>Name
+          <input name="name" required minlength="3" maxlength="20" autocomplete="username">
+        </label>
+        <label class="nur-registrieren">E-Mail <small>(optional)</small>
+          <input name="email" type="email" autocomplete="email">
+        </label>
+        <label>Passwort
+          <input name="passwort" type="password" required minlength="8">
+        </label>
+        <label class="nur-registrieren">Passwort wiederholen
+          <input name="passwort2" type="password" autocomplete="new-password">
+        </label>
+        <p class="nur-registrieren klein">Mindestens 8 Zeichen. In der Bestenliste erscheint nur dein Name.</p>
+        <p id="meldung" class="fehler" role="alert"></p>
+        <button type="submit" class="knopf gross">Einloggen</button>
+      </form>
+      <p class="klein mitte"><a href="launcher.html">Ohne Konto als Gast spielen →</a></p>
+    </div>
+  </main>
+  <script type="module" src="js/seiten/login.js"></script>
+</body>
+</html>

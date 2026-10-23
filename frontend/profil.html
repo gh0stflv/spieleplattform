@@ -1,1 +1,41 @@
-<!-- profil.html – Seite wird vom Team gestaltet (siehe docs/Projektkonzept.md) -->
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profil · Spieleplattform</title>
+  <link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+  <header class="kopf">
+    <a class="logo" href="launcher.html">🕹️ Spieleplattform</a>
+    <nav id="benutzer-bereich"></nav>
+  </header>
+  <main>
+    <h1 id="profil-name">Profil</h1>
+    <p class="klein">Dabei seit <span id="seit"></span></p>
+
+    <h2>Statistik</h2>
+    <div id="statistik" class="kennzahlen"></div>
+
+    <h2>Erfolge <span id="erfolge-zaehler" class="zaehler"></span></h2>
+    <ul id="erfolge" class="erfolge"></ul>
+
+    <h2>Datenschutz</h2>
+    <p>Gespeichert sind nur dein Name, optional deine E-Mail, ein Hash deines Passworts und deine Spielergebnisse.</p>
+    <button type="button" class="knopf gefahr" id="loeschen">Konto löschen</button>
+
+    <dialog id="loeschen-dialog">
+      <form method="dialog">
+        <h3>Konto wirklich löschen?</h3>
+        <p>Alle deine Ergebnisse und Erfolge werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.</p>
+        <div class="knopfreihe">
+          <button value="nein" class="knopf leise">Abbrechen</button>
+          <button value="ja" class="knopf gefahr">Endgültig löschen</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+  <script type="module" src="js/seiten/profil.js"></script>
+</body>
+</html>

@@ -1,3 +1,2 @@
-# Python-Abhängigkeiten, z. B.:
-# flask
-# bcrypt
+flask>=3.0
+pytest>=8.0
