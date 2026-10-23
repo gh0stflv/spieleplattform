@@ -11,6 +11,11 @@ export class Eingabe {
     window.addEventListener("keydown", (e) => this.#taste(e));
     canvas.addEventListener("pointerdown", (e) => this.#zeigerRunter(e));
     canvas.addEventListener("pointerup", (e) => this.#zeigerHoch(e));
+    canvas.addEventListener("pointermove", (e) => {
+      if (!this.#spiel || e.pointerType !== "mouse") return;
+      const { x, y } = this.#position(e);
+      this.#spiel.verarbeiteZeiger(x, y);
+    });
   }
 
   registriere(spiel) { this.#spiel = spiel; }

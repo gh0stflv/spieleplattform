@@ -24,7 +24,7 @@ def test_passwort_gehasht(app, client):
 
 def test_spiele(client):
     ids = [s["id"] for s in client.get("/api/spiele").json]
-    assert ids == ["snake", "memory"]
+    assert ids == ["snake", "memory", "viergewinnt"]
 
 
 def test_score_nur_eingeloggt(client):
@@ -63,9 +63,11 @@ def test_plausibilitaet(eingeloggt):
 def test_erfolge_allrounder(eingeloggt):
     eingeloggt.post("/api/scores", json={"spiel_id": "snake", "punkte": 10, "dauer_s": 10})
     r = eingeloggt.post("/api/scores", json={"spiel_id": "memory", "punkte": 900, "dauer_s": 30})
-    assert {e["id"] for e in r.json["neue_erfolge"]} == {"allrounder", "gedaechtniskuenstler"}
+    assert {e["id"] for e in r.json["neue_erfolge"]} == {"gedaechtniskuenstler"}
+    r = eingeloggt.post("/api/scores", json={"spiel_id": "viergewinnt", "punkte": 0, "dauer_s": 30})
+    assert {e["id"] for e in r.json["neue_erfolge"]} == {"allrounder"}
     profil = eingeloggt.get("/api/profil").json
-    assert profil["statistik"]["spiele_gesamt"] == 2
+    assert profil["statistik"]["spiele_gesamt"] == 3
     assert sum(e["erreicht"] for e in profil["erfolge"]) == 3
 
 
@@ -81,3 +83,28 @@ def test_konto_loeschen(app, eingeloggt):
 
 def test_frontend_wird_ausgeliefert(client):
     assert client.get("/").status_code == 200
+
+
+def test_raum_ablauf(client, app):
+    a = client.post("/api/raeume", json={"spiel_id": "viergewinnt", "name": "Ali"})
+    assert a.status_code == 201
+    code, token_a = a.json["code"], a.json["token"]
+    assert a.json["ich"] == 0 and not a.json["voll"]
+
+    zweiter = app.test_client()
+    b = zweiter.post(f"/api/raeume/{code.lower()}/beitreten", json={"name": "Bea"})
+    assert b.json["ich"] == 1 and b.json["voll"] and b.json["spieler"] == ["Ali", "Bea"]
+    assert zweiter.post(f"/api/raeume/{code}/beitreten", json={}).status_code == 409
+
+    assert client.post(f"/api/raeume/{code}/zug", json={"token": token_a, "nr": 0, "daten": {"spalte": 3}}).status_code == 200
+    # gleicher Zug-Index nochmal → Konflikt
+    assert zweiter.post(f"/api/raeume/{code}/zug", json={"token": b.json["token"], "nr": 0, "daten": {}}).status_code == 409
+    assert zweiter.post(f"/api/raeume/{code}/zug", json={"token": "falsch", "nr": 1, "daten": {}}).status_code == 403
+    stand = zweiter.get(f"/api/raeume/{code}?seit=0").json
+    assert stand["ereignisse"] == [{"nr": 0, "von": 0, "daten": {"spalte": 3}}]
+    assert zweiter.get(f"/api/raeume/{code}?seit=1").json["ereignisse"] == []
+
+
+def test_raum_unbekannt(client):
+    assert client.get("/api/raeume/ZZZZ").status_code == 404
+    assert client.post("/api/raeume", json={"spiel_id": "gibtsnicht"}).status_code == 404
