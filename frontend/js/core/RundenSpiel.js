@@ -78,7 +78,7 @@ export class RundenSpiel extends Spiel {
     if (!this.menschAmZug || !this.zugErlaubt(zug, this.amZug)) return false;
     if (this.imLan) {
       this.wartetAufNetz = true;
-      this.raum.senden({ typ: "zug", zug }).catch(() => { this.wartetAufNetz = false; });
+      this.raum.senden({ typ: "zug", zug, ...this.zugZusatz() }).catch(() => { this.wartetAufNetz = false; });
     } else {
       this.#fuehreAus(zug);
     }
@@ -98,15 +98,20 @@ export class RundenSpiel extends Spiel {
     this.zuegeGesamt++;
     const ergebnis = this.ergebnis();
     if (ergebnis !== undefined) {
-      this.sieger = ergebnis;
-      this.endeWartet = ENDE_PAUSE;
-      this.#punkteBerechnen();
-      this.#zeigeStatus(ergebnis === null ? "Unentschieden" : `${this.spielerName(ergebnis)} gewinnt`);
+      this.partieBeenden(ergebnis);
       return;
     }
     if (!nochmal) this.amZug = 1 - seite;
     if (this.gegenComputer && this.amZug === 1) this.botWartet = BOT_DENKPAUSE;
     this.#zeigeStatus();
+  }
+
+  /** Beendet die Partie, auch ohne Zug (z. B. Aufgabe oder Zeit). sieger: null = unentschieden, 0/1. */
+  partieBeenden(sieger) {
+    this.sieger = sieger;
+    this.endeWartet = ENDE_PAUSE;
+    this.#punkteBerechnen();
+    this.#zeigeStatus(sieger === null ? "Unentschieden" : `${this.spielerName(sieger)} gewinnt`);
   }
 
   #punkteBerechnen() {
@@ -143,6 +148,8 @@ export class RundenSpiel extends Spiel {
   ergebnis() { throw new Error("ergebnis() fehlt"); }
   /** Zug des Computers (Seite 1) für die Stufe "leicht" | "mittel" | "schwer". */
   botZug(_stufe) { throw new Error("botZug() fehlt"); }
+  /** Weitere Daten, die im LAN mit dem eigenen Zug verschickt werden (z. B. Restzeit der Schachuhr). */
+  zugZusatz() { return {}; }
   /** Zusatzpunkte bei einem Sieg, z. B. für schnelle Siege. */
   siegBonus() { return 0; }
   /** Animationen fortschreiben. */

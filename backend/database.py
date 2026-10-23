@@ -63,6 +63,9 @@ SPIELE = [
      "Klicken oder Tasten 1 = Schere, 2 = Stein, 3 = Papier", 200, 60, 4),
     ("dame", "Dame", "Klassisches Dame: diagonal ziehen, Schlagzwang, Mehrfachsprung, Damen ganz hinten.",
      "Stein anklicken, dann Zielfeld", 450, 100, 10),
+    # max_punkte = 0: keine Wertung, wird nur im LAN gespielt
+    ("schach", "Schach", "Schach zu zweit im LAN: volle Regeln, Schachuhr, Remis und Aufgeben.",
+     "Figur anklicken, dann Zielfeld · nur im Netzwerk (LAN)", 0, 0, 0),
 ]
 
 ERFOLGE = [

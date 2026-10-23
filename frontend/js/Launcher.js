@@ -74,6 +74,7 @@ export class Launcher {
     this.el.titel.textContent = info.name;
     const Klasse = SPIELE[id];
     this.el.tipp.hidden = Boolean(Klasse.ohnePause);
+    this.el.buehne.style.setProperty("--spielbreite", `${Klasse.breite}px`); // breitere Spiele, z. B. Schach mit Seitenleiste
     this.aktuell = new Klasse(this.el.canvas, {
       beiPunkten: (wert, bezeichnung = "Punkte") => { this.el.anzeige.textContent = `${bezeichnung}: ${wert}`; },
       beiZustand: (z) => this.#zustandGeaendert(z),

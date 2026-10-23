@@ -37,6 +37,7 @@ Tests: `cd backend && python -m pytest`
 - **Snake** (Tastatur oder Wischen) und **Memory** (Maus oder Touch)
 - **Vier gewinnt**, **Super Tic-Tac-Toe** und **Dame**: gegen den Computer (3 Stufen), zu zweit an einem Gerät oder im LAN
 - **Schere Stein Papier**: gegen einen lernenden Computer oder im LAN
+- **Schach**: nur im LAN, volle Regeln (Rochade, en passant, Umwandlung, Remisregeln), Schachuhr, Remis anbieten, Aufgeben, Zugliste
 - Mehrspieler im lokalen Netzwerk über Räume mit Code
 - Bestenliste (Top 10 pro Spiel, eigener Eintrag hervorgehoben)
 - Erfolge und Profilseite mit Statistik
@@ -58,7 +59,8 @@ frontend/
   css/stil.css
   js/core/            Spiel + Spielobjekt (abstrakt), RundenSpiel (Basis für 2-Personen-Spiele),
                       GameLoop, Eingabe, ApiClient, Raum (LAN)
-  js/games/           snake/, memory/, viergewinnt/, supertictactoe/, dame/, ssp/, index.js (Registry)
+  js/games/           snake/, memory/, viergewinnt/, supertictactoe/, dame/, ssp/,
+                      schach/ (Regeln.js = Schachregeln ohne Oberfläche), index.js (Registry)
   js/Launcher.js      Spielauswahl, Overlay, Bestenliste nach dem Spiel
 docs/                 Konzept und Planung
 ```

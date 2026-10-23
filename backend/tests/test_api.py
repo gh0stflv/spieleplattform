@@ -24,7 +24,7 @@ def test_passwort_gehasht(app, client):
 
 def test_spiele(client):
     ids = [s["id"] for s in client.get("/api/spiele").json]
-    assert ids == ["snake", "memory", "viergewinnt", "supertictactoe", "ssp", "dame"]
+    assert ids == ["snake", "memory", "viergewinnt", "supertictactoe", "ssp", "dame", "schach"]
 
 
 def test_score_nur_eingeloggt(client):
