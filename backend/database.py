@@ -55,6 +55,8 @@ SPIELE = [
      "Pfeiltasten oder WASD (Handy: wischen) · Leertaste = Pause", None, 25, 1),
     ("memory", "Memory", "Finde alle Kartenpaare mit möglichst wenigen Versuchen.",
      "Karte anklicken oder antippen · Leertaste = Pause", 1000, 250, 4),
+    ("viergewinnt", "Vier gewinnt", "Bring vier Steine in eine Reihe: gegen den Computer, zu zweit oder im LAN.",
+     "Spalte anklicken oder ← → und Enter · Tasten 1–7", 400, 200, 3),
 ]
 
 ERFOLGE = [

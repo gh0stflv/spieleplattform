@@ -43,7 +43,9 @@ export class Spiel {
     this.rueckrufe.beiZustand?.(zustand);
   }
 
-  starten() {
+  /** @param {string} [modus] einer der in static modi definierten Modi (z. B. Schwierigkeit) */
+  starten(modus) {
+    this.modus = modus ?? this.constructor.modi?.[0]?.id;
     this.punkte = 0;
     this.spielzeit = 0;
     this.zuruecksetzen();
@@ -52,6 +54,7 @@ export class Spiel {
   }
 
   pausieren() {
+    if (this.raum) return; // im LAN-Spiel gibt es keine Pause, die anderen spielen weiter
     if (this.zustand === Zustand.LAEUFT) this.#setzeZustand(Zustand.PAUSE);
     else if (this.zustand === Zustand.PAUSE) this.#setzeZustand(Zustand.LAEUFT);
   }
@@ -76,8 +79,19 @@ export class Spiel {
     this.rueckrufe.beiPunkten?.(this.punkte);
   }
 
+  /** false, wenn das Ergebnis nicht in die Bestenliste soll (z. B. 2 Spieler an einem Gerät). */
+  get gewertet() { return true; }
+
+  /** Optionale Überschrift fürs Ergebnis, z. B. "Du hast gewonnen!". */
+  get ergebnisText() { return null; }
+
   meldeErgebnis() {
-    this.rueckrufe.beiEnde?.({ punkte: Math.round(this.punkte), dauerS: Math.round(this.spielzeit * 10) / 10 });
+    this.rueckrufe.beiEnde?.({
+      punkte: Math.round(this.punkte),
+      dauerS: Math.round(this.spielzeit * 10) / 10,
+      gewertet: this.gewertet,
+      text: this.ergebnisText,
+    });
   }
 
   // --- von Unterklassen zu implementieren ---
@@ -85,7 +99,10 @@ export class Spiel {
   update(_dt) { throw new Error(`${this.name}: update() fehlt`); }
   zeichnen() { throw new Error(`${this.name}: zeichnen() fehlt`); }
   verarbeiteEingabe(_taste) {}
+  /** Ereignis eines LAN-Raums (eigene und fremde, in Reihenfolge). */
+  empfangeEreignis(_ereignis) {}
   verarbeiteKlick(_x, _y) {}
+  verarbeiteZeiger(_x, _y) {}
   verarbeiteWischen(_richtung) {}
 }
 
