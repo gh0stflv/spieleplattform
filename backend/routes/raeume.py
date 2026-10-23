@@ -1,9 +1,9 @@
 import socket
 
-from flask import Blueprint, current_app, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request
 
 from database import verbindung
-from services import AuthService, RaumFehler
+from services import RaumFehler
 
 from . import fehler
 
@@ -15,8 +15,8 @@ def _dienst():
 
 
 def _name(daten):
-    benutzer = AuthService(verbindung()).finde(session.get("benutzer_id"))
-    return benutzer.name if benutzer else (daten.get("name") or "Gast").strip() or "Gast"
+    name = daten.get("name")
+    return (name.strip() if isinstance(name, str) else "") or "Gast"
 
 
 @bp.errorhandler(RaumFehler)
@@ -39,9 +39,15 @@ def beitreten(code):
     return jsonify(_dienst().beitreten(code, _name(daten)))
 
 
+@bp.post("/raeume/<code>/wieder")
+def wieder_eintreten(code):
+    daten = request.get_json(silent=True) or {}
+    return jsonify(_dienst().wieder_eintreten(code, daten.get("token")))
+
+
 @bp.get("/raeume/<code>")
 def abfragen(code):
-    return jsonify(_dienst().abfragen(code, request.args.get("seit", 0, type=int)))
+    return jsonify(_dienst().abfragen(code, request.args.get("seit", 0, type=int), request.args.get("token")))
 
 
 @bp.post("/raeume/<code>/zug")

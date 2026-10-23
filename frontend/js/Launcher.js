@@ -4,12 +4,38 @@ import { GameLoop } from "./core/GameLoop.js";
 import { Raum } from "./core/Raum.js";
 import { Zustand } from "./core/Spiel.js";
 import { SPIELE } from "./games/index.js";
-import { escapeHtml } from "./seiten/kopfzeile.js";
+
+export function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+
+function gespeicherterName() {
+  try { return localStorage.getItem("gastName") ?? ""; } catch { return ""; }
+}
+
+function nameMerken(name) {
+  try { localStorage.setItem("gastName", name); } catch { /* egal */ }
+}
+
+// Der Platz im LAN-Raum wird je Tab gemerkt, damit man nach dem Neuladen wieder einsteigen kann
+const RAUM_SPEICHER = "lanRaum";
+
+function raumMerken(daten) {
+  try {
+    if (daten) sessionStorage.setItem(RAUM_SPEICHER, JSON.stringify(daten));
+    else sessionStorage.removeItem(RAUM_SPEICHER);
+  } catch { /* egal */ }
+}
+
+function gemerkterRaum() {
+  try { return JSON.parse(sessionStorage.getItem(RAUM_SPEICHER)); } catch { return null; }
+}
 
 /** Zeigt die Spielauswahl, startet Spiele und meldet Ergebnisse an die API. */
 export class Launcher {
-  constructor(wurzel, benutzer) {
-    this.benutzer = benutzer;
+  constructor(wurzel) {
     this.spiele = [];
     this.aktuell = null;
     this.el = {
@@ -22,12 +48,14 @@ export class Launcher {
       overlay: wurzel.querySelector("#overlay"),
       zurueck: wurzel.querySelector("#zurueck"),
       tipp: wurzel.querySelector(".tipp"),
+      lanStatus: wurzel.querySelector("#lan-status"),
     };
     this.loop = new GameLoop();
     this.eingabe = new Eingabe(this.el.canvas);
     this.el.zurueck.addEventListener("click", () => this.zeigeAuswahl());
     window.addEventListener("popstate", () => this.#nachUrl());
-    window.addEventListener("pagehide", () => this.#raumVerlassen());
+    // Beim Schließen/Neuladen nur die Abfrage stoppen, nicht den Raum verlassen: Wiedereinstieg bleibt möglich
+    window.addEventListener("pagehide", () => this.raum?.stopp());
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && this.aktuell?.zustand === Zustand.LAEUFT) this.aktuell.pausieren();
     });
@@ -48,9 +76,24 @@ export class Launcher {
   }
 
   #nachUrl() {
-    const id = new URLSearchParams(location.search).get("spiel");
-    if (id && SPIELE[id]) this.starteSpiel(id, false);
-    else this.zeigeAuswahl(false);
+    const params = new URLSearchParams(location.search);
+    const id = params.get("spiel");
+    if (!id || !SPIELE[id]) { this.zeigeAuswahl(false); return; }
+    this.starteSpiel(id, false);
+    const gemerkt = gemerkterRaum();
+    const code = params.get("raum");
+    if (code && gemerkt?.code === code && gemerkt.spielId === id) this.#wiederEinsteigen(gemerkt);
+  }
+
+  /** Nach dem Neuladen: Raum wieder betreten, alle bisherigen Ereignisse werden erneut abgespielt. */
+  async #wiederEinsteigen({ code, token }) {
+    this.#zeigeOverlay(`<h2>Verbinde wieder mit Raum ${escapeHtml(code)} …</h2>`);
+    try {
+      this.#raumBetreten(await Raum.wieder(code, token));
+    } catch (e) {
+      raumMerken(null);
+      this.#lanMenue(`Wiedereinstieg nicht möglich: ${e.message}`);
+    }
   }
 
   zeigeAuswahl(verlauf = true) {
@@ -87,7 +130,6 @@ export class Launcher {
       <h2>${escapeHtml(info.name)}</h2>
       <p>${escapeHtml(info.beschreibung)}</p>
       <p class="steuerung">🎮 ${escapeHtml(info.steuerung)}</p>
-      ${this.benutzer ? "" : '<p class="hinweis">Als Gast wird dein Ergebnis nicht gespeichert. <a href="login.html">Einloggen</a></p>'}
       ${this.#startKnoepfe(Klasse)}`);
   }
 
@@ -117,13 +159,18 @@ export class Launcher {
   // ---------- Mehrspieler im lokalen Netzwerk ----------
 
   #lanMenue(meldung = "") {
-    const gast = !this.benutzer;
-    let gastName = "";
-    try { gastName = localStorage.getItem("gastName") ?? ""; } catch { /* egal */ }
+    // Spiele mit static lanSpieler = { min, max } lassen den Ersteller die Spielerzahl wählen
+    const { min = 2, max = 2 } = this.aktuell.constructor.lanSpieler ?? {};
+    const auswahl = max > min ? `
+      <label class="lan-feld">Spieler im Raum
+        <select name="anzahl">${Array.from({ length: max - min + 1 }, (_, i) => min + i)
+          .map((n) => `<option value="${n}">${n}</option>`).join("")}</select>
+      </label>` : "";
     this.#zeigeOverlay(`
       <h2>Im Netzwerk spielen</h2>
       <p class="hinweis">Alle müssen im selben WLAN/LAN sein und diese Seite über die Netzwerk-Adresse öffnen.</p>
-      ${gast ? `<label class="lan-feld">Dein Name <input name="gastname" maxlength="20" placeholder="Gast" value="${escapeHtml(gastName)}"></label>` : ""}
+      <label class="lan-feld">Dein Name <input name="gastname" maxlength="20" placeholder="Gast" value="${escapeHtml(gespeicherterName())}"></label>
+      ${auswahl}
       <button type="button" class="knopf gross" data-lan="erstellen">Raum erstellen</button>
       <form class="lan-beitreten" data-lan="beitreten">
         <input name="code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" aria-label="Raum-Code">
@@ -132,17 +179,15 @@ export class Launcher {
       <p class="fehler" role="alert">${escapeHtml(meldung)}</p>
       <button type="button" class="knopf leise" data-aktion="auswahl">Zurück</button>`);
     const o = this.el.overlay;
-    const nameMerken = () => {
-      const feld = o.querySelector("[name=gastname]");
-      if (feld) try { localStorage.setItem("gastName", feld.value.trim()); } catch { /* egal */ }
-    };
+    const nameUebernehmen = () => nameMerken(o.querySelector("[name=gastname]").value.trim());
     o.querySelector("[data-lan=erstellen]").addEventListener("click", async () => {
-      nameMerken();
-      try { this.#raumBetreten(await Raum.erstellen(this.info.id)); } catch (e) { this.#lanMenue(e.message); }
+      nameUebernehmen();
+      const anzahl = Number(o.querySelector("[name=anzahl]")?.value ?? min);
+      try { this.#raumBetreten(await Raum.erstellen(this.info.id, anzahl)); } catch (e) { this.#lanMenue(e.message); }
     });
     o.querySelector("[data-lan=beitreten]").addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      nameMerken();
+      nameUebernehmen();
       const code = ev.target.code.value;
       if (code.trim().length !== 4) { this.#lanMenue("Der Code hat 4 Zeichen."); return; }
       try { this.#raumBetreten(await Raum.beitreten(code)); } catch (e) { this.#lanMenue(e.message); }
@@ -151,13 +196,24 @@ export class Launcher {
 
   #raumBetreten(raum) {
     this.raum = raum;
+    raumMerken({ code: raum.code, token: raum.token, spielId: this.info.id });
+    history.replaceState({}, "", `launcher.html?spiel=${encodeURIComponent(this.info.id)}&raum=${encodeURIComponent(raum.code)}`);
     raum.beiEreignis = (e) => this.#raumEreignis(e);
     raum.beiAenderung = (_r, fehler) => {
       if (fehler) { this.#raumVerlassen(false); this.#lanMenue(fehler); return; }
       if (this.aktuell.zustand === Zustand.BEREIT) this.#lanWarten();
+      this.#lanStatusZeigen();
     };
     raum.starte();
     this.#lanWarten();
+  }
+
+  /** Hinweis unter dem Spielfeld, wenn Mitspieler gerade nicht verbunden sind (z. B. Seite neu laden). */
+  #lanStatusZeigen() {
+    const raum = this.raum;
+    const weg = raum ? raum.spieler.filter((_n, i) => i !== raum.ich && raum.verbunden[i] === false) : [];
+    this.el.lanStatus.hidden = !weg.length;
+    if (weg.length) this.el.lanStatus.textContent = `⏳ ${weg.map(escapeHtml).join(", ")} ist gerade nicht verbunden … wartet auf Wiedereinstieg`;
   }
 
   async #lanWarten() {
@@ -206,6 +262,9 @@ export class Launcher {
     if (!this.raum) return;
     const raum = this.raum;
     this.raum = null;
+    raumMerken(null);
+    this.el.lanStatus.hidden = true;
+    if (this.info) history.replaceState({}, "", `launcher.html?spiel=${encodeURIComponent(this.info.id)}`);
     if (this.aktuell) this.aktuell.raum = null;
     raum.stopp();
     if (melden) raum.senden({ typ: "verlassen" }).catch(() => {});
@@ -223,53 +282,70 @@ export class Launcher {
   }
 
   async #spielVorbei({ punkte, dauerS, gewertet, text }) {
-    const spielId = this.info.id;
+    const spielId = this.aktuell.bestenlisteId ?? this.info.id; // Varianten (z. B. Memory 10 × 10) haben eigene Listen
+    const listenName = this.aktuell.bestenlisteName ?? "";
     const titel = escapeHtml(text ?? "Spiel vorbei");
     const knoepfe = `
       <button type="button" class="knopf gross" data-aktion="start">Nochmal</button>
       <button type="button" class="knopf leise" data-aktion="auswahl">Zur Spielauswahl</button>`;
-    if (!gewertet) { // z. B. 2 Spieler an einem Gerät: nichts speichern
+    if (!gewertet) { // z. B. 2 Spieler an einem Gerät oder LAN: nichts speichern
       this.#zeigeOverlay(`<h2>${titel}</h2><div class="knopfreihe">${knoepfe}</div>`);
       return;
     }
-    this.#zeigeOverlay(`<h2>${titel}</h2><p class="ergebnis">${punkte} Punkte</p><p>Speichere …</p>`);
+    this.#zeigeOverlay(`<h2>${titel}</h2><p class="ergebnis">${punkte} Punkte</p><p>Lade Bestenliste …</p>`);
+    const ergebnis = { spielId, kachel: this.info.id, listenName, punkte, dauerS, eingetragen: null };
+    await this.#zeigeBestenliste(titel, knoepfe, ergebnis);
+  }
 
-    let meldung = "";
-    if (this.benutzer) {
-      try {
-        const antwort = await api.sendeScore(spielId, punkte, dauerS);
-        meldung = `<p>Dein bester Platz: <strong>#${antwort.platz}</strong></p>`;
-        if (antwort.neue_erfolge.length) {
-          meldung += `<div class="neue-erfolge">🏆 Neuer Erfolg: ${antwort.neue_erfolge
-            .map((e) => `<strong>${escapeHtml(e.name)}</strong>`).join(", ")}</div>`;
-        }
-      } catch (fehler) {
-        meldung = `<p class="fehler">Nicht gespeichert: ${escapeHtml(fehler.message)}</p>`;
-      }
-    } else {
-      meldung = '<p class="hinweis">Als Gast nicht gespeichert. <a href="login.html">Einloggen</a></p>';
-    }
-
-    let tabelle = "";
+  /** Ergebnis, Formular zum Eintragen mit Namen und die Top 10. */
+  async #zeigeBestenliste(titel, knoepfe, ergebnis, meldung = "") {
+    const { spielId, punkte } = ergebnis;
+    let tabelle;
     try {
       tabelle = this.#bestenlisteHtml(await api.holeBestenliste(spielId));
     } catch {
       tabelle = '<p class="fehler">Bestenliste nicht verfügbar.</p>';
     }
-    if (this.aktuell?.zustand !== Zustand.VORBEI || this.info.id !== spielId) return; // inzwischen neu gestartet
+    if (this.aktuell?.zustand !== Zustand.VORBEI || this.info.id !== ergebnis.kachel) return; // inzwischen neu gestartet
+    const formular = ergebnis.eingetragen || punkte <= 0 ? "" : `
+      <form class="eintragen">
+        <input name="name" maxlength="20" placeholder="Dein Name" value="${escapeHtml(gespeicherterName())}"
+          aria-label="Dein Name" required>
+        <button type="submit" class="knopf">In Bestenliste eintragen</button>
+      </form>`;
     this.#zeigeOverlay(`
       <h2>${titel}</h2>
       <p class="ergebnis">${punkte} Punkte</p>
+      ${formular}
       ${meldung}
-      <h3>Bestenliste</h3>
+      <h3>Bestenliste${ergebnis.listenName ? ` · ${escapeHtml(ergebnis.listenName)}` : ""}</h3>
       ${tabelle}
       <div class="knopfreihe">${knoepfe}</div>`);
+    const form = this.el.overlay.querySelector(".eintragen");
+    if (!form) return;
+    form.name.focus();
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const name = form.name.value.trim();
+      form.querySelector("button").disabled = true;
+      try {
+        const antwort = await api.sendeScore(spielId, name, punkte, ergebnis.dauerS);
+        nameMerken(antwort.name);
+        ergebnis.eingetragen = antwort.name;
+        await this.#zeigeBestenliste(titel, knoepfe, ergebnis,
+          `<p>Eingetragen als <strong>${escapeHtml(antwort.name)}</strong>. Dein bester Platz: <strong>#${antwort.platz}</strong></p>`);
+      } catch (fehler) {
+        await this.#zeigeBestenliste(titel, knoepfe, ergebnis,
+          `<p class="fehler">Nicht gespeichert: ${escapeHtml(fehler.message)}</p>`);
+      }
+    });
   }
 
   #bestenlisteHtml(liste) {
     if (!liste.length) return "<p>Noch keine Einträge. Sei die erste Person!</p>";
+    const eigener = gespeicherterName().toLowerCase();
     const zeilen = liste.map((z) => `
-      <tr class="${this.benutzer && z.benutzer_id === this.benutzer.id ? "ich" : ""}">
+      <tr class="${eigener && z.name.toLowerCase() === eigener ? "ich" : ""}">
         <td>${z.platz}</td><td>${escapeHtml(z.name)}</td><td>${z.punkte}</td>
       </tr>`).join("");
     return `<table class="bestenliste"><thead><tr><th>#</th><th>Name</th><th>Punkte</th></tr></thead>

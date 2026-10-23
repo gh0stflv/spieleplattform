@@ -1,4 +1,4 @@
-/** Kapselt alle Aufrufe an die Flask-REST-API (JSON + Session-Cookie). */
+/** Kapselt alle Aufrufe an die Flask-REST-API (JSON). */
 export class ApiFehler extends Error {
   constructor(nachricht, status) {
     super(nachricht);
@@ -13,7 +13,6 @@ export class ApiClient {
       headers: daten ? { "Content-Type": "application/json" } : {},
       body: daten ? JSON.stringify(daten) : undefined,
       keepalive: methode !== "GET",
-      credentials: "same-origin",
     });
     const inhalt = await antwort.json().catch(() => null);
     if (!antwort.ok) {
@@ -22,17 +21,11 @@ export class ApiClient {
     return inhalt;
   }
 
-  registrieren(name, passwort, email) { return this.#anfrage("POST", "/registrieren", { name, passwort, email }); }
-  login(name, passwort) { return this.#anfrage("POST", "/login", { name, passwort }); }
-  logout() { return this.#anfrage("POST", "/logout"); }
-  ich() { return this.#anfrage("GET", "/ich"); }
   holeSpiele() { return this.#anfrage("GET", "/spiele"); }
-  sendeScore(spielId, punkte, dauerS) {
-    return this.#anfrage("POST", "/scores", { spiel_id: spielId, punkte, dauer_s: dauerS });
+  sendeScore(spielId, name, punkte, dauerS) {
+    return this.#anfrage("POST", "/scores", { spiel_id: spielId, name, punkte, dauer_s: dauerS });
   }
   holeBestenliste(spielId) { return this.#anfrage("GET", `/bestenliste/${encodeURIComponent(spielId)}`); }
-  holeProfil() { return this.#anfrage("GET", "/profil"); }
-  kontoLoeschen() { return this.#anfrage("DELETE", "/konto"); }
 
   // Mehrspieler im lokalen Netzwerk
   serverInfo() { return this.#anfrage("GET", "/server"); }
@@ -42,12 +35,15 @@ export class ApiClient {
   raumBeitreten(code) {
     return this.#anfrage("POST", `/raeume/${encodeURIComponent(code)}/beitreten`, { name: this.gastName() });
   }
-  raumAbfragen(code, seit) { return this.#anfrage("GET", `/raeume/${encodeURIComponent(code)}?seit=${seit}`); }
+  raumWieder(code, token) { return this.#anfrage("POST", `/raeume/${encodeURIComponent(code)}/wieder`, { token }); }
+  raumAbfragen(code, seit, token) {
+    return this.#anfrage("GET", `/raeume/${encodeURIComponent(code)}?seit=${seit}&token=${encodeURIComponent(token)}`);
+  }
   raumZug(code, token, nr, daten) {
     return this.#anfrage("POST", `/raeume/${encodeURIComponent(code)}/zug`, { token, nr, daten });
   }
 
-  /** Name für nicht eingeloggte Mitspieler (der Server nimmt sonst den Kontonamen). */
+  /** Name für LAN-Räume und die Bestenliste, im Browser gespeichert (es gibt keine Konten). */
   gastName() {
     try { return localStorage.getItem("gastName") || "Gast"; } catch { return "Gast"; }
   }

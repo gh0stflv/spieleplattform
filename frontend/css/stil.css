@@ -33,12 +33,8 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .75rem; }
   padding: .75rem 1.25rem; border-bottom: 1px solid var(--rand); background: var(--flaeche);
 }
 .logo { font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
-#benutzer-bereich { display: flex; align-items: center; gap: .75rem; }
-#benutzer-bereich .name { color: var(--text); text-decoration: none; font-weight: 600; }
-.gast { color: var(--leise); }
 
 main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
-main.schmal { max-width: 420px; }
 
 .knopf {
   display: inline-block; border: 0; border-radius: 10px; cursor: pointer;
@@ -50,7 +46,6 @@ main.schmal { max-width: 420px; }
 .knopf.gross { padding: .75rem 1.5rem; font-size: 1.05rem; }
 .knopf.leise { background: var(--flaeche-2); color: var(--text); }
 .knopf.leise:hover { background: var(--rand); }
-.knopf.gefahr { background: var(--gefahr); color: #1a0b0b; }
 .knopfreihe { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
 
 .kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
@@ -69,9 +64,13 @@ main.schmal { max-width: 420px; }
 .kachel-memory { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='22' height='30' rx='4' fill='%235b6cff'/%3E%3Crect x='36' y='24' width='22' height='30' rx='4' fill='%23f4f1e8'/%3E%3Ctext x='47' y='45' font-size='16' text-anchor='middle'%3E%E2%AD%90%3C/text%3E%3C/svg%3E"); }
 .kachel-viergewinnt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='14' width='56' height='44' rx='6' fill='%233446d6'/%3E%3Cg fill='%2314171f'%3E%3Ccircle cx='16' cy='26' r='5'/%3E%3Ccircle cx='32' cy='26' r='5'/%3E%3Ccircle cx='48' cy='26' r='5'/%3E%3C/g%3E%3Ccircle cx='16' cy='46' r='5' fill='%23ff5b6e'/%3E%3Ccircle cx='32' cy='46' r='5' fill='%23ffd84d'/%3E%3Ccircle cx='48' cy='46' r='5' fill='%23ff5b6e'/%3E%3Ccircle cx='32' cy='8' r='5' fill='%23ffd84d'/%3E%3C/svg%3E"); }
 .kachel-supertictactoe { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg stroke='%233b4152' stroke-width='3'%3E%3Cpath d='M23 6v52M41 6v52M6 23h52M6 41h52'/%3E%3C/g%3E%3Cg stroke='%23ff5b6e' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M9 9l10 10M19 9L9 19M45 45l10 10M55 45L45 55'/%3E%3C/g%3E%3Cg fill='none' stroke='%235bc8ff' stroke-width='4'%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3Ccircle cx='50' cy='14' r='5'/%3E%3C/g%3E%3C/svg%3E"); }
-.kachel-ssp { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext x='32' y='44' font-size='30' text-anchor='middle'%3E%E2%9C%8A%E2%9C%8B%3C/text%3E%3C/svg%3E"); }
 .kachel-dame { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='4' fill='%23c9c2ae'/%3E%3Cg fill='%233b4152'%3E%3Crect x='18' y='4' width='14' height='14'/%3E%3Crect x='46' y='4' width='14' height='14'/%3E%3Crect x='4' y='18' width='14' height='14'/%3E%3Crect x='32' y='18' width='14' height='14'/%3E%3Crect x='18' y='32' width='14' height='14'/%3E%3Crect x='46' y='32' width='14' height='14'/%3E%3Crect x='4' y='46' width='14' height='14'/%3E%3Crect x='32' y='46' width='14' height='14'/%3E%3C/g%3E%3Ccircle cx='25' cy='39' r='6' fill='%23ff5b6e'/%3E%3Ccircle cx='39' cy='25' r='6' fill='%23f4f1e8'/%3E%3C/svg%3E"); }
 .kachel-schach { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='4' fill='%23d8cfb9'/%3E%3Cg fill='%237a849a'%3E%3Crect x='18' y='4' width='14' height='14'/%3E%3Crect x='46' y='4' width='14' height='14'/%3E%3Crect x='4' y='18' width='14' height='14'/%3E%3Crect x='32' y='18' width='14' height='14'/%3E%3Crect x='18' y='32' width='14' height='14'/%3E%3Crect x='46' y='32' width='14' height='14'/%3E%3Crect x='4' y='46' width='14' height='14'/%3E%3Crect x='32' y='46' width='14' height='14'/%3E%3C/g%3E%3Ctext x='32' y='47' font-size='40' text-anchor='middle' fill='%231d2029' stroke='%23e8e4d8' stroke-width='1.5'%3E%E2%99%9E%3C/text%3E%3C/svg%3E"); }
+.kachel-schiffe { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='4' fill='%2315304d'/%3E%3Cg stroke='rgba(255,255,255,.15)' stroke-width='1'%3E%3Cpath d='M18 4v56M32 4v56M46 4v56M4 18h56M4 32h56M4 46h56'/%3E%3C/g%3E%3Crect x='7' y='21' width='36' height='8' rx='4' fill='%239aa3b8'/%3E%3Crect x='49' y='35' width='8' height='22' rx='4' fill='%239aa3b8'/%3E%3Cpath d='M21 39l8 8M29 39l-8 8' stroke='%23ff5b6e' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='11' cy='11' r='2' fill='rgba(255,255,255,.5)'/%3E%3Ccircle cx='53' cy='11' r='2' fill='rgba(255,255,255,.5)'/%3E%3C/svg%3E"); }
+.kachel-hangman { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg stroke='%238a6a3f' stroke-width='4' stroke-linecap='round' fill='none'%3E%3Cpath d='M8 58h28M16 58V8M14 8h26M16 18l10-10'/%3E%3C/g%3E%3Cpath d='M40 8v8' stroke='%23c9b37c' stroke-width='2'/%3E%3Cg stroke='%23f4f1e8' stroke-width='3' stroke-linecap='round' fill='none'%3E%3Ccircle cx='40' cy='22' r='6'/%3E%3Cpath d='M40 28v14M40 32l-8 8M40 32l8 8M40 42l-6 10M40 42l6 10'/%3E%3C/g%3E%3C/svg%3E"); }
+.kachel-wort5 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='24' width='10' height='14' rx='2' fill='%233f9b5a'/%3E%3Crect x='16' y='24' width='10' height='14' rx='2' fill='%233a3f4b'/%3E%3Crect x='28' y='24' width='10' height='14' rx='2' fill='%23c9a227'/%3E%3Crect x='40' y='24' width='10' height='14' rx='2' fill='%233a3f4b'/%3E%3Crect x='52' y='24' width='10' height='14' rx='2' fill='%233f9b5a'/%3E%3Cg fill='none' stroke='%233a4152' stroke-width='1.5'%3E%3Crect x='4' y='8' width='10' height='14' rx='2'/%3E%3Crect x='16' y='8' width='10' height='14' rx='2'/%3E%3Crect x='28' y='8' width='10' height='14' rx='2'/%3E%3Crect x='40' y='8' width='10' height='14' rx='2'/%3E%3Crect x='52' y='8' width='10' height='14' rx='2'/%3E%3Crect x='4' y='40' width='10' height='14' rx='2'/%3E%3Crect x='16' y='40' width='10' height='14' rx='2'/%3E%3Crect x='28' y='40' width='10' height='14' rx='2'/%3E%3Crect x='40' y='40' width='10' height='14' rx='2'/%3E%3Crect x='52' y='40' width='10' height='14' rx='2'/%3E%3C/g%3E%3C/svg%3E"); }
+.kachel-blackjack { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='8' fill='%231d5a3c'/%3E%3Cg transform='rotate(-12 22 34)'%3E%3Crect x='8' y='14' width='26' height='37' rx='3' fill='%23fbfaf6'/%3E%3Ctext x='12' y='25' font-size='10' font-weight='700' font-family='sans-serif' fill='%231d2029'%3EA%3C/text%3E%3Ctext x='21' y='42' font-size='16' text-anchor='middle' fill='%231d2029'%3E%E2%99%A0%3C/text%3E%3C/g%3E%3Cg transform='rotate(10 42 34)'%3E%3Crect x='30' y='14' width='26' height='37' rx='3' fill='%23fbfaf6'/%3E%3Ctext x='34' y='25' font-size='10' font-weight='700' font-family='sans-serif' fill='%23c8283c'%3EK%3C/text%3E%3Ctext x='43' y='42' font-size='16' text-anchor='middle' fill='%23c8283c'%3E%E2%99%A5%3C/text%3E%3C/g%3E%3C/svg%3E"); }
+.kachel-spider { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='8' fill='%231d5a3c'/%3E%3Crect x='15' y='6' width='34' height='40' rx='4' fill='%23fbfaf6' stroke='%23778' stroke-width='.7'/%3E%3Ctext x='18' y='15' font-size='9' font-weight='700' font-family='sans-serif' fill='%231d2029'%3EK%3C/text%3E%3Ctext x='46' y='15' font-size='8' text-anchor='end' fill='%231d2029'%3E%E2%99%A0%3C/text%3E%3Crect x='15' y='16' width='34' height='40' rx='4' fill='%23fbfaf6' stroke='%23778' stroke-width='.7'/%3E%3Ctext x='18' y='25' font-size='9' font-weight='700' font-family='sans-serif' fill='%231d2029'%3ED%3C/text%3E%3Ctext x='46' y='25' font-size='8' text-anchor='end' fill='%231d2029'%3E%E2%99%A0%3C/text%3E%3Crect x='15' y='26' width='34' height='32' rx='4' fill='%23fbfaf6' stroke='%23778' stroke-width='.7'/%3E%3Ctext x='18' y='35' font-size='9' font-weight='700' font-family='sans-serif' fill='%231d2029'%3EB%3C/text%3E%3Ctext x='32' y='54' font-size='18' text-anchor='middle' fill='%231d2029'%3E%E2%99%A0%3C/text%3E%3C/svg%3E"); }
 
 .buehne { display: flex; flex-direction: column; align-items: center; }
 .buehne-kopf { width: min(100%, var(--spielbreite, 480px)); display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
@@ -91,20 +90,27 @@ main.schmal { max-width: 420px; }
 .ergebnis { font-size: 2rem; font-weight: 800; color: var(--gut); }
 .steuerung { color: var(--leise); }
 .hinweis { color: var(--leise); font-size: .9rem; }
-.neue-erfolge { margin-top: .5rem; padding: .4rem .8rem; border-radius: 8px; background: #3a3216; color: #ffd76b; }
 .modi { display: flex; flex-direction: column; gap: .5rem; margin-top: .75rem; width: min(100%, 300px); }
 .modi .knopf { margin-top: 0; }
 .lan-feld { display: flex; flex-direction: column; gap: .3rem; margin: .5rem 0; font-weight: 600; }
+.lan-feld select {
+  padding: .5rem .75rem; font: inherit; color: var(--text); background: var(--hg);
+  border: 1px solid var(--rand); border-radius: 8px;
+}
 .lan-feld input, .lan-beitreten input {
   padding: .55rem .75rem; font: inherit; color: var(--text);
   background: var(--hg); border: 1px solid var(--rand); border-radius: 8px;
 }
+.eintragen { display: flex; gap: .5rem; margin: .75rem 0 .25rem; width: min(100%, 360px); }
+.eintragen input { margin-top: 0; }
+.eintragen .knopf { margin-top: 0; width: auto; white-space: nowrap; }
 .lan-beitreten { display: flex; gap: .5rem; margin-top: .75rem; }
 .lan-beitreten input { width: 7rem; text-transform: uppercase; letter-spacing: .2em; text-align: center; font-weight: 700; }
 .lan-beitreten .knopf { margin-top: 0; }
 .raum-code { font-size: 2.6rem; font-weight: 800; letter-spacing: .25em; margin: .25rem 0 .5rem !important; color: var(--akzent-hell); }
 .raum-spieler { list-style: none; padding: 0; margin: .25rem 0 .75rem; }
 .tipp { color: var(--leise); font-size: .85rem; }
+.lan-status { color: #ffd84d; }
 
 .bestenliste { border-collapse: collapse; min-width: 240px; font-variant-numeric: tabular-nums; }
 .bestenliste th, .bestenliste td { padding: .2rem .6rem; text-align: left; }
@@ -112,13 +118,6 @@ main.schmal { max-width: 420px; }
 .bestenliste th { color: var(--leise); font-weight: 500; font-size: .85rem; }
 .bestenliste tr.ich td { background: rgba(91, 108, 255, .3); font-weight: 700; }
 
-.karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); padding: 1.5rem; }
-.reiter { display: flex; gap: .25rem; margin-bottom: 1.25rem; background: var(--hg); border-radius: 10px; padding: .25rem; }
-.reiter button {
-  flex: 1; border: 0; border-radius: 8px; padding: .5rem; font: inherit; font-weight: 600; cursor: pointer;
-  background: transparent; color: var(--leise);
-}
-.reiter button[aria-selected="true"] { background: var(--flaeche-2); color: var(--text); }
 form label { display: block; margin-bottom: .9rem; font-weight: 600; }
 form input {
   display: block; width: 100%; margin-top: .3rem; padding: .6rem .75rem; font: inherit;
@@ -127,24 +126,6 @@ form input {
 form input:focus { outline: 2px solid var(--akzent); border-color: transparent; }
 form .knopf { width: 100%; }
 .fehler { color: var(--gefahr); min-height: 1.2em; }
-.klein { font-size: .9rem; color: var(--leise); }
-.mitte { text-align: center; margin-top: 1rem; }
-
-.kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .75rem; }
-.kennzahl { background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); padding: 1rem; }
-.kennzahl strong { display: block; font-size: 1.8rem; }
-.kennzahl span { color: var(--leise); font-size: .9rem; }
-.zaehler { color: var(--leise); font-weight: 400; font-size: 1rem; }
-.erfolge { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .75rem; }
-.erfolge li { display: flex; gap: .75rem; align-items: center; padding: .75rem 1rem; border-radius: var(--radius); background: var(--flaeche); border: 1px solid var(--rand); opacity: .55; }
-.erfolge li.erreicht { opacity: 1; border-color: #6b5a1f; }
-.erfolge .symbol { font-size: 1.6rem; }
-.erfolge small { display: block; color: var(--leise); }
-
-dialog { background: var(--flaeche); color: var(--text); border: 1px solid var(--rand); border-radius: var(--radius); max-width: 420px; }
-dialog::backdrop { background: rgba(0, 0, 0, .6); }
-dialog h3 { margin-top: 0; }
-
 @media (max-width: 520px) {
   main { padding: 1.25rem 1rem 3rem; }
   .kopf { padding: .6rem 1rem; }

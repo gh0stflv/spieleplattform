@@ -4,6 +4,10 @@ Der Server prüft keine Spielregeln: Er hält nur fest, wer im Raum ist, und
 speichert die Züge in fester Reihenfolge. Jeder Client wendet dieselben Züge
 in derselben Reihenfolge an, dadurch sehen alle denselben Spielstand.
 Räume liegen nur im Arbeitsspeicher und verschwinden beim Neustart.
+
+Zufall: Enthält ein Ereignis "zufall": n (1–30), hängt der Server n Zufallszahlen als
+"wuerfe" an. Sie entstehen erst beim Eintreffen, also kann sie vorher niemand kennen
+(z. B. Karten ziehen oder würfeln, ohne dass jemand die Reihenfolge vorhersagen kann).
 """
 import random
 import secrets
@@ -12,7 +16,9 @@ import time
 
 CODE_ZEICHEN = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # ohne 0/O/1/I
 MAX_ALTER_S = 3 * 3600
-MAX_EREIGNISSE = 5000
+MAX_EREIGNISSE = 20000
+VERBUNDEN_S = 4  # wer so lange nicht abgefragt hat, gilt als nicht verbunden
+MAX_ZUFALL = 30
 
 
 class RaumFehler(Exception):
@@ -27,7 +33,7 @@ class Raum:
         self.spiel_id = spiel_id
         self.max_spieler = max_spieler
         self.seed = random.randrange(2**31)
-        self.spieler = []        # [{"name", "token"}]
+        self.spieler = []        # [{"name", "token", "zuletzt"}] (zuletzt = letzte Abfrage)
         self.ereignisse = []     # [{"nr", "von", "daten"}]
         self.letzte_aktivitaet = time.time()
 
@@ -44,6 +50,7 @@ class Raum:
             "max_spieler": self.max_spieler,
             "seed": self.seed,
             "spieler": [s["name"] for s in self.spieler],
+            "verbunden": [time.time() - s["zuletzt"] < VERBUNDEN_S for s in self.spieler],
             "voll": len(self.spieler) >= self.max_spieler,
             "anzahl_ereignisse": len(self.ereignisse),
             "ereignisse": self.ereignisse[max(0, seit):],
@@ -90,12 +97,26 @@ class RaumService:
 
     def _eintreten(self, raum, name):
         token = secrets.token_urlsafe(16)
-        raum.spieler.append({"name": (name or "Gast")[:20], "token": token})
+        raum.spieler.append({"name": (name or "Gast")[:20], "token": token, "zuletzt": time.time()})
         return {"code": raum.code, "token": token, "ich": len(raum.spieler) - 1, **raum.zustand()}
 
-    def abfragen(self, code, seit=0):
+    def wieder_eintreten(self, code, token):
+        """Nach dem Neuladen der Seite: denselben Platz mit dem gemerkten Token wieder einnehmen."""
         with self._sperre:
-            return self._raum(code).zustand(seit)
+            raum = self._raum(code)
+            ich = raum.index_von(token)
+            if ich is None:
+                raise RaumFehler("Du bist nicht in diesem Raum.", 403)
+            raum.spieler[ich]["zuletzt"] = time.time()
+            return {"code": raum.code, "token": token, "ich": ich, **raum.zustand()}
+
+    def abfragen(self, code, seit=0, token=None):
+        with self._sperre:
+            raum = self._raum(code)
+            ich = raum.index_von(token) if token else None
+            if ich is not None:
+                raum.spieler[ich]["zuletzt"] = time.time()
+            return raum.zustand(seit)
 
     def zug(self, code, token, nr, daten):
         """Hängt einen Zug an. nr muss der aktuellen Anzahl entsprechen (sonst war jemand schneller)."""
@@ -108,5 +129,10 @@ class RaumService:
                 raise RaumFehler("Veralteter Spielstand, bitte neu laden.", 409)
             if len(raum.ereignisse) >= MAX_EREIGNISSE:
                 raise RaumFehler("Zu viele Züge in diesem Raum.", 409)
+            if isinstance(daten, dict) and "zufall" in daten:
+                anzahl = daten.pop("zufall")
+                if not isinstance(anzahl, int) or isinstance(anzahl, bool) or not 1 <= anzahl <= MAX_ZUFALL:
+                    raise RaumFehler(f"zufall muss zwischen 1 und {MAX_ZUFALL} liegen.")
+                daten["wuerfe"] = [secrets.randbelow(2**31) for _ in range(anzahl)]
             raum.ereignisse.append({"nr": nr, "von": von, "daten": daten})
             return {"nr": nr}

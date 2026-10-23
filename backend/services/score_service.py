@@ -24,37 +24,48 @@ class ScoreService:
         if punkte > spiel["max_punkte_pro_s"] * dauer_s:
             raise ScoreFehler("Punktzahl für die Spieldauer unplausibel.")
 
-    def speichern(self, benutzer_id, spiel_id, punkte, dauer_s) -> int:
+    @staticmethod
+    def name_pruefen(name):
+        if not isinstance(name, str) or not name.strip():
+            raise ScoreFehler("Bitte einen Namen eingeben.")
+        name = " ".join(name.split())
+        if len(name) > 20:
+            raise ScoreFehler("Der Name darf höchstens 20 Zeichen haben.")
+        return name
+
+    def speichern(self, name, spiel_id, punkte, dauer_s) -> str:
+        """Speichert das Ergebnis und gibt den bereinigten Namen zurück."""
+        name = self.name_pruefen(name)
         spiel = self.spiel(spiel_id)
         if spiel is None:
             raise ScoreFehler("Unbekanntes Spiel.")
         self.plausibilitaet_pruefen(spiel, punkte, dauer_s)
-        cur = self.db.execute(
-            "INSERT INTO score (benutzer_id, spiel_id, punkte, dauer_s) VALUES (?, ?, ?, ?)",
-            (benutzer_id, spiel_id, punkte, float(dauer_s)))
+        self.db.execute(
+            "INSERT INTO score (name, spiel_id, punkte, dauer_s) VALUES (?, ?, ?, ?)",
+            (name, spiel_id, punkte, float(dauer_s)))
         self.db.commit()
-        return cur.lastrowid
+        return name
 
     def bestenliste(self, spiel_id, limit=10):
-        """Bester Score je Benutzer, absteigend sortiert."""
+        """Bester Score je Name (Groß-/Kleinschreibung egal), absteigend sortiert."""
         zeilen = self.db.execute(
-            """SELECT b.id AS benutzer_id, b.name, MAX(s.punkte) AS punkte, MIN(s.zeitpunkt) AS zeitpunkt
-               FROM score s JOIN benutzer b ON b.id = s.benutzer_id
-               WHERE s.spiel_id = ?
-               GROUP BY b.id
+            """SELECT name, MAX(punkte) AS punkte, MIN(zeitpunkt) AS zeitpunkt
+               FROM score
+               WHERE spiel_id = ?
+               GROUP BY name COLLATE NOCASE
                ORDER BY punkte DESC, zeitpunkt ASC
                LIMIT ?""", (spiel_id, limit)).fetchall()
         return [{"platz": i + 1, **dict(z)} for i, z in enumerate(zeilen)]
 
-    def platz(self, spiel_id, benutzer_id):
-        """Platz des Benutzers (nach seinem Bestwert) oder None."""
+    def platz(self, spiel_id, name):
+        """Platz des Namens (nach seinem Bestwert) oder None."""
         best = self.db.execute(
-            "SELECT MAX(punkte) AS p FROM score WHERE spiel_id = ? AND benutzer_id = ?",
-            (spiel_id, benutzer_id)).fetchone()["p"]
+            "SELECT MAX(punkte) AS p FROM score WHERE spiel_id = ? AND name = ? COLLATE NOCASE",
+            (spiel_id, name)).fetchone()["p"]
         if best is None:
             return None
         besser = self.db.execute(
             """SELECT COUNT(*) AS n FROM (
-                 SELECT benutzer_id, MAX(punkte) AS p FROM score WHERE spiel_id = ? GROUP BY benutzer_id
+                 SELECT MAX(punkte) AS p FROM score WHERE spiel_id = ? GROUP BY name COLLATE NOCASE
                ) WHERE p > ?""", (spiel_id, best)).fetchone()["n"]
         return besser + 1

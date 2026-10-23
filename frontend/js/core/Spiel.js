@@ -104,6 +104,14 @@ export class Spiel {
   verarbeiteKlick(_x, _y) {}
   verarbeiteZeiger(_x, _y) {}
   verarbeiteWischen(_richtung) {}
+  /** Mausrad über dem Spielfeld. true = verarbeitet (dann scrollt die Seite nicht). */
+  verarbeiteRad(_x, _y, _delta) { return false; }
+  /** Ziehen mit gedrückter Taste/Finger um (dx, dy). true = verarbeitet (dann gibt es keinen Klick). */
+  verarbeiteZiehen(_dx, _dy) { return false; }
+  /** Taste/Finger gedrückt bei (x, y) – Beginn eines Klicks oder Ziehens. */
+  verarbeiteDruck(_x, _y) {}
+  /** Losgelassen bei (x, y), nachdem gezogen wurde (sonst kommt verarbeiteKlick). */
+  verarbeiteLoslassen(_x, _y) {}
 }
 
 /** Basis für alles, was im Spiel gezeichnet wird. */

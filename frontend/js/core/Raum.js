@@ -10,7 +10,7 @@ const ABFRAGE_MS = 300;
 export class Raum {
   #timer = 0;
   #laeuft = false;
-  #abfrageLaeuft = false;
+  #abfrage = null; // laufende Abfrage, damit senden() auf sie warten kann
 
   constructor(daten) {
     this.code = daten.code;
@@ -19,7 +19,8 @@ export class Raum {
     this.seed = daten.seed;
     this.maxSpieler = daten.max_spieler;
     this.spieler = daten.spieler;
-    this.verarbeitet = 0;
+    this.verbunden = daten.verbunden ?? daten.spieler.map(() => true);
+    this.verarbeitet = 0; // beim Wiedereinstieg werden alle Ereignisse ab 0 erneut abgespielt
     this.beiEreignis = () => {};
     this.beiAenderung = () => {};
   }
@@ -30,6 +31,11 @@ export class Raum {
 
   static async beitreten(code) {
     return new Raum(await api.raumBeitreten(code.trim().toUpperCase()));
+  }
+
+  /** Nach dem Neuladen: denselben Platz mit dem gemerkten Token wieder einnehmen. */
+  static async wieder(code, token) {
+    return new Raum(await api.raumWieder(code, token));
   }
 
   get voll() { return this.spieler.length >= this.maxSpieler; }
@@ -44,15 +50,24 @@ export class Raum {
     clearTimeout(this.#timer);
   }
 
-  async #abfragen() {
-    if (!this.#laeuft || this.#abfrageLaeuft) return;
-    this.#abfrageLaeuft = true;
+  /** Holt neue Ereignisse. Läuft schon eine Abfrage, wird auf diese gewartet. */
+  #abfragen() {
+    if (!this.#laeuft) return Promise.resolve();
+    this.#abfrage ??= this.#abfrageAusfuehren().finally(() => {
+      this.#abfrage = null;
+      if (this.#laeuft) this.#timer = setTimeout(() => this.#abfragen(), ABFRAGE_MS);
+    });
+    return this.#abfrage;
+  }
+
+  async #abfrageAusfuehren() {
     clearTimeout(this.#timer);
     try {
-      const stand = await api.raumAbfragen(this.code, this.verarbeitet);
-      const vorher = this.spieler.length;
+      const stand = await api.raumAbfragen(this.code, this.verarbeitet, this.token);
+      const vorher = `${this.spieler.length}|${this.verbunden.join()}`;
       this.spieler = stand.spieler;
-      if (this.spieler.length !== vorher) this.beiAenderung(this);
+      this.verbunden = stand.verbunden ?? this.verbunden;
+      if (`${this.spieler.length}|${this.verbunden.join()}` !== vorher) this.beiAenderung(this);
       for (const e of stand.ereignisse) {
         if (!this.#laeuft || e.nr !== this.verarbeitet) continue;
         this.verarbeitet = e.nr + 1;
@@ -60,18 +75,20 @@ export class Raum {
       }
     } catch (fehler) {
       if (fehler.status === 404) { this.#laeuft = false; this.beiAenderung(this, "Der Raum existiert nicht mehr."); }
-    } finally {
-      this.#abfrageLaeuft = false;
-      if (this.#laeuft) this.#timer = setTimeout(() => this.#abfragen(), ABFRAGE_MS);
     }
   }
 
   /** Schickt ein Ereignis an alle. Es wird erst angewendet, wenn es über die Abfrage zurückkommt. */
   async senden(daten) {
-    try {
-      await api.raumZug(this.code, this.token, this.verarbeitet, daten);
-    } catch (fehler) {
-      if (fehler.status !== 409) throw fehler; // 409: jemand war schneller, neu abfragen reicht
+    for (let versuch = 1; ; versuch++) {
+      try {
+        await api.raumZug(this.code, this.token, this.verarbeitet, daten);
+        break;
+      } catch (fehler) {
+        // 409: jemand war schneller. Neuen Stand holen und nochmal senden, die Spiele prüfen jedes Ereignis selbst.
+        if (fehler.status !== 409 || versuch >= 5 || !this.#laeuft) throw fehler;
+        await this.#abfragen();
+      }
     }
     this.#abfragen();
   }
